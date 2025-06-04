@@ -1,0 +1,30 @@
+{
+  "name": "josephhughes-info",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "astro": "astro",
+    "build": "astro build",
+    "dev": "PUBLIC_USE_INSPECTOR=true bun astro dev",
+    "dev:no-inspector": "astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/svelte": "^7.1.0",
+    "@tailwindcss/vite": "^4.1.8",
+    "@xstate/svelte": "^4.0.5",
+    "astro": "^5.8.2",
+    "bits-ui": "^1.8.0",
+    "svelte": "^5.33.14",
+    "tailwind-variants": "^1.0.0",
+    "tailwindcss": "^4.1.8",
+    "tw-animate-css": "^1.3.4",
+    "typescript": "^5.8.3",
+    "xstate": "^5.19.4"
+  },
+  "devDependencies": {
+    "@statelyai/inspect": "^0.4.0"
+  },
+  "packageManager": "pnpm@10.11.1"
+}

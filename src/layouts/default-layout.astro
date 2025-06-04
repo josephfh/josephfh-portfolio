@@ -1,0 +1,32 @@
+---
+import "../styles/global.css";
+import { Font } from "astro:assets";
+import Header from "../components/header.svelte";
+import Nav from "../components/nav.svelte";
+import RoutesListener from "../components/routes.listener.svelte";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Joseph Hughes - Frontend developer</title>
+    <Font cssVariable="--font-monomakh" preload />
+  </head>
+  <body>
+    <div class="m-20">
+      <Header />
+
+      <div class="my-12">
+        <Nav client:load />
+      </div>
+
+      <slot />
+
+      <RoutesListener client:only />
+    </div>
+  </body>
+</html>
