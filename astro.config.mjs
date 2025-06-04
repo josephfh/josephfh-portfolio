@@ -1,8 +1,7 @@
 // @ts-check
 import { defineConfig, envField, fontProviders } from "astro/config";
-
+import compress from "astro-compress";
 import svelte from "@astrojs/svelte";
-
 import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
@@ -16,7 +15,6 @@ export default defineConfig({
       }),
     },
   },
-
   experimental: {
     fonts: [
       {
@@ -26,9 +24,17 @@ export default defineConfig({
       },
     ],
   },
-
-  integrations: [svelte()],
-
+  integrations: [
+    compress({
+      CSS: true,
+      HTML: false, // Svelte can't handle this HTML compression
+      Image: false,
+      JavaScript: true,
+      SVG: false,
+      Logger: 1,
+    }),
+    svelte(),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },

@@ -6,9 +6,7 @@
 
   const historyHandler = (event: PopStateEvent) => {
     const url = new URL(event.state?.url || location.href);
-    const view = Object.entries(views).find(
-      ([_id, path]) => path === url.pathname,
-    );
+    const view = Object.entries(views).find(([_id, path]) => path === url.pathname);
     if (view) {
       session.send({ type: "NAVIGATE", view: view[0] as keyof typeof views });
     } else {

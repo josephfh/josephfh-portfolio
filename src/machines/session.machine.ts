@@ -17,11 +17,16 @@ export const sessionMachine = setup({
       states: {
         initializing: {},
         intro: {},
+        architecture: {},
         experience: {},
         contact: {},
       },
       on: {
         NAVIGATE: [
+          {
+            guard: ({ event }) => event.view === "architecture",
+            target: ".architecture",
+          },
           {
             guard: ({ event }) => event.view === "contact",
             target: ".contact",

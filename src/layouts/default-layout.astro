@@ -17,14 +17,18 @@ import RoutesListener from "../components/routes.listener.svelte";
     <Font cssVariable="--font-monomakh" preload />
   </head>
   <body>
-    <div class="m-20">
+    <div class="mx-20 mt-16 mb-10">
       <Header />
 
-      <div class="my-12">
+      <div class="mt-16 mb-8">
         <Nav client:load />
       </div>
 
       <slot />
+
+      <!-- <div class="bg-linear-to-b/increasing from-indigo-500 to-teal-400 flex w-2 top-0 absolute left-0 h-screen"></div>
+
+      <div class="bg-teal-600 flex w-2 top-0 absolute left-0 h-screen opacity-60 hover:opacity-0 duration-200 transition-all"></div> -->
 
       <RoutesListener client:only />
     </div>

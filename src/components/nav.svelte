@@ -1,15 +1,14 @@
 <script lang="ts">
-  import { views } from "../consts/views.ts";
   import { session } from "../stores/session.svelte.ts";
   import { tv } from "tailwind-variants";
   import { navigate } from "../utils/navigate.ts";
   import { mainNav } from "../consts/main-nav.ts";
 
   const navLink = tv({
-    base: "font-semibold py-1 px-3 rounded-full active:opacity-80",
+    base: "py-1 px-3 rounded-full active:opacity-80",
     variants: {
       color: {
-        active: "bg-blue-500 hover:bg-blue-700",
+        active: "bg-blue-500",
         default: "bg-transparent hover:bg-blue-700",
       },
     },
@@ -19,13 +18,8 @@
   });
 
   const navItems = $derived(
-    mainNav.map(({ view, href }) => ({
-      label:
-        view === "intro"
-          ? "Intro"
-          : view === "contact"
-            ? "Contact"
-            : "Experience",
+    mainNav.map(({ label, href, view }) => ({
+      label,
       href,
       isCurrent: session.state.value.journey === view,
       handleClick: (event: MouseEvent) => {
@@ -38,10 +32,6 @@
 
 <div class="-mx-1 flex gap-x-2">
   {#each navItems as { href, isCurrent, label, handleClick }}
-    <a
-      {href}
-      onclick={handleClick}
-      class={navLink({ color: isCurrent ? "active" : "default" })}>{label}</a
-    >
+    <a {href} onclick={handleClick} class={navLink({ color: isCurrent ? "active" : "default" })}>{label}</a>
   {/each}
 </div>

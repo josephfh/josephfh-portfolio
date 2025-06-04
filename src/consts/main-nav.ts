@@ -18,6 +18,11 @@ export const mainNav: MainNavItem[] = [
     href: "/experience",
   },
   {
+    view: "architecture",
+    label: "Architecture",
+    href: "/architecture",
+  },
+  {
     view: "contact",
     label: "Contact",
     href: "/contact",
