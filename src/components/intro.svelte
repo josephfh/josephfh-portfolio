@@ -1,3 +1,7 @@
+<script>
+  import { session } from "../stores/actors.svelte.ts";
+</script>
+
 <p>
   Working in frontend development for 20 years. Currently spending most of my time in React Native, React and TypeScript
   to build enterprise-level reliable, maintainable and scalable mobile apps and web apps. I have worked with many big

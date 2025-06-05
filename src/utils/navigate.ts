@@ -1,9 +1,9 @@
-import { views } from "../consts/views";
-import { session } from "../stores/session.svelte";
+import { VIEWS, type View } from "../consts/views";
+import { session } from "../stores/actors.svelte.ts";
 
-export const navigate = (view: keyof typeof views, href: string) => {
-  if (Object.keys(views).includes(view)) {
-    session.send({ type: "NAVIGATE", view: view as keyof typeof views });
+export const navigate = (view: View, href: string) => {
+  if (Object.keys(VIEWS).includes(view)) {
+    session.send({ type: "NAVIGATE", view: view as View });
     history.pushState(null, "", href);
   }
 };

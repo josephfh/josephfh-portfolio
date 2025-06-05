@@ -1,12 +1,12 @@
-import type { views } from "./views";
+import type { VIEWS } from "./views";
 
 interface MainNavItem {
-  view: keyof typeof views;
+  view: keyof typeof VIEWS;
   label: string;
   href: string;
 }
 
-export const mainNav: MainNavItem[] = [
+export const MAIN_NAV_ITEMS: MainNavItem[] = [
   {
     view: "intro",
     label: "Intro",

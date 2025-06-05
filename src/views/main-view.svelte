@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { View } from "../consts/views";
+  import { type View } from "../consts/views";
   import Architecture from "../components/architecture.svelte";
   import Contact from "../components/contact.svelte";
   import Content from "../components/content.svelte";
   import Experience from "../components/experience.svelte";
   import Intro from "../components/intro.svelte";
-  import { session } from "../stores/session.svelte.ts";
+  import { session } from "../stores/actors.svelte.ts";
 
   interface Props {
     view: View;

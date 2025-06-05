@@ -4,11 +4,20 @@ import { Font } from "astro:assets";
 import Header from "../components/header.svelte";
 import Nav from "../components/nav.svelte";
 import RoutesListener from "../components/routes.listener.svelte";
+import WindowListener from "../components/window.listener.svelte";
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+
+    (҂◡_◡) ᕤ
+
+    Thanks for taking a look behind the curtain.
+    Check out the repo: https://github.com/josephfh/josephfh-portfolio
+
+    -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -18,10 +27,10 @@ import RoutesListener from "../components/routes.listener.svelte";
   </head>
   <body>
     <div class="mx-20 mt-16 mb-10">
-      <Header />
+      <Header client:idle />
 
       <div class="mt-16 mb-8">
-        <Nav client:load />
+        <Nav client:idle />
       </div>
 
       <slot />
@@ -30,6 +39,7 @@ import RoutesListener from "../components/routes.listener.svelte";
 
       <div class="bg-teal-600 flex w-2 top-0 absolute left-0 h-screen opacity-60 hover:opacity-0 duration-200 transition-all"></div> -->
 
+      <WindowListener client:only />
       <RoutesListener client:only />
     </div>
   </body>

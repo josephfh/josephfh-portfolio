@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { session } from "../stores/session.svelte.ts";
+  import { session } from "../stores/actors.svelte.ts";
   import { tv } from "tailwind-variants";
   import { navigate } from "../utils/navigate.ts";
-  import { mainNav } from "../consts/main-nav.ts";
+  import { MAIN_NAV_ITEMS } from "../consts/main-nav.ts";
 
   const navLink = tv({
     base: "py-1 px-3 rounded-full active:opacity-80",
@@ -18,10 +18,10 @@
   });
 
   const navItems = $derived(
-    mainNav.map(({ label, href, view }) => ({
+    MAIN_NAV_ITEMS.map(({ label, href, view }) => ({
       label,
       href,
-      isCurrent: session.state.value.journey === view,
+      isCurrent: session.state.matches({ journey: view }),
       handleClick: (event: MouseEvent) => {
         event.preventDefault();
         navigate(view, href);

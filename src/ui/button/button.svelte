@@ -38,7 +38,6 @@
 </script>
 
 <script lang="ts">
-  import { cn } from "tailwind-variants";
   let {
     class: className,
     variant = "default",
