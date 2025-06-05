@@ -31,8 +31,6 @@ sessionActor.system.inspect((inspectEvent) => {
     if (inspectEvent.event.type !== "LOG_EVENT") {
       // Only log events from the parent "session" actor, not the spawned child actors
       if (inspectEvent.actorRef === sessionActor) {
-        console.log("Events:", inspectEvent.actorRef.getSnapshot().context.sessionLogs[0].events);
-        console.log("Logging event:", inspectEvent.event);
         session.send({ type: "LOG_EVENT", event: inspectEvent.event });
       }
     }
