@@ -2,7 +2,11 @@ import { assign, fromPromise, setup } from "xstate";
 import { GEO_LOCATIONS } from "../consts/geo-locations";
 import { WEATHER_WORDS_FROM_CODE_4677 } from "../consts/weather-words";
 import { MAX_WEATHER_FETCH_RETRIES } from "../consts/limits";
-import { WEATHER_FETCH_INTERVAL, WEATHER_FETCH_RETRY_DELAY } from "../consts/timings";
+import {
+  WEATHER_FETCH_DELAY_AFTER_FAILURE,
+  WEATHER_FETCH_INTERVAL,
+  WEATHER_FETCH_RETRY_DELAY,
+} from "../consts/timings";
 
 interface WeatherResponse {
   current: {
@@ -65,7 +69,7 @@ export const weatherMachine = setup({
             },
             onError: {
               target: "waiting before retry",
-              actions: ["incrementWeatherFetchRetries", () => console.log("Weather fetch failed")],
+              actions: ["incrementWeatherFetchRetries"],
             },
           },
         },
@@ -92,7 +96,7 @@ export const weatherMachine = setup({
         },
         unknown: {
           after: {
-            [WEATHER_FETCH_INTERVAL]: {
+            [WEATHER_FETCH_DELAY_AFTER_FAILURE]: {
               target: "fetching weather",
             },
           },
