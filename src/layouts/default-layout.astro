@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import { Font } from "astro:assets";
 import Header from "../components/header.svelte";
+import Stats from "../components/stats.svelte";
 import Nav from "../components/nav.svelte";
 import RoutesListener from "../components/routes.listener.svelte";
 import WindowListener from "../components/window.listener.svelte";
@@ -28,7 +29,7 @@ import WindowListener from "../components/window.listener.svelte";
   <body>
     <div class="mx-20 mt-16 mb-10">
       <Header client:idle />
-
+      <Stats client:idle />
       <div class="mt-16 mb-8">
         <Nav client:idle />
       </div>

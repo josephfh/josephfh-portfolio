@@ -1,7 +1,8 @@
 import { assign, fromPromise, setup } from "xstate";
 import { GEO_LOCATIONS } from "../consts/geo-locations";
 import { WEATHER_WORDS_FROM_CODE_4677 } from "../consts/weather-words";
-import { TIMINGS } from "../consts/timings";
+import { MAX_WEATHER_FETCH_RETRIES } from "../consts/limits";
+import { WEATHER_FETCH_INTERVAL, WEATHER_FETCH_RETRY_DELAY } from "../consts/timings";
 
 interface WeatherResponse {
   current: {
@@ -31,7 +32,7 @@ export const weatherMachine = setup({
     }),
   },
   guards: {
-    weatherFetchRetriesExceeded: ({ context }) => context.weatherFetchRetries >= 3,
+    weatherFetchRetriesExceeded: ({ context }) => context.weatherFetchRetries >= MAX_WEATHER_FETCH_RETRIES,
   },
   types: {
     context: {} as {
@@ -77,21 +78,21 @@ export const weatherMachine = setup({
             },
           ],
           after: {
-            [TIMINGS.weatherFetchRetryDelay]: {
+            [WEATHER_FETCH_RETRY_DELAY]: {
               target: "fetching weather",
             },
           },
         },
         idle: {
           after: {
-            [TIMINGS.weatherFetchInterval]: {
+            [WEATHER_FETCH_INTERVAL]: {
               target: "fetching weather",
             },
           },
         },
         unknown: {
           after: {
-            [TIMINGS.weatherFetchInterval]: {
+            [WEATHER_FETCH_INTERVAL]: {
               target: "fetching weather",
             },
           },

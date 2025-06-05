@@ -1,8 +1,23 @@
 import type { View } from "../consts/views";
 import { CONSOLE_WELCOME_MESSAGE_DEVELOPMENT } from "../consts/console-welcome-message.development";
 import { CONSOLE_WELCOME_MESSAGE_PRODUCTION } from "../consts/console-welcome-message.production";
+import { MAX_SESSION_LOG_AGE, MAX_SESSION_LOG_COUNT, MAX_SESSION_LOG_EVENTS } from "../consts/limits";
 import { assign, setup, stateIn, type ActorRefFrom } from "xstate";
+import { uuid } from "../utils/uuid";
 import { weatherMachine } from "./weather.machine";
+
+interface SessionEvent {
+  timestamp: number;
+  type: string;
+  view?: View;
+}
+
+interface SessionLog {
+  id: string;
+  endTime: number;
+  events: SessionEvent[];
+  startTime: number;
+}
 
 export const sessionMachine = setup({
   actions: {
@@ -44,8 +59,11 @@ export const sessionMachine = setup({
       };
       isAppFocused: boolean;
       isAppOnline: boolean;
+      sessionId: string;
+      sessionLogs: SessionLog[];
     },
     events: {} as
+      | { type: "LOG_EVENT"; event: any }
       | { type: "NAVIGATE"; view: View }
       | { type: "REPORT_BLUR" }
       | { type: "REPORT_FOCUS" }
@@ -58,6 +76,8 @@ export const sessionMachine = setup({
     childMachineRefs: {},
     isAppFocused: true,
     isAppOnline: true,
+    sessionId: uuid(),
+    sessionLogs: [],
   },
   entry: ["logWelcomeMessageToConsole", "spawnChildMachines"],
   type: "parallel",
@@ -92,8 +112,99 @@ export const sessionMachine = setup({
         ],
       },
     },
+    telemetry: {
+      initial: "prune old session logs",
+      states: {
+        "prune old session logs": {
+          entry: [
+            assign(({ context }) => ({
+              sessionLogs: context.sessionLogs.filter((log) => log.startTime > Date.now() - MAX_SESSION_LOG_AGE),
+            })),
+          ],
+          always: [
+            {
+              target: "prune excessive session logs",
+            },
+          ],
+        },
+        "prune excessive session logs": {
+          entry: [
+            assign(({ context }) => ({
+              sessionLogs: context.sessionLogs.sort((a, b) => b.startTime - a.startTime).slice(-MAX_SESSION_LOG_COUNT),
+            })),
+          ],
+          always: [
+            {
+              target: "initializing session",
+            },
+          ],
+        },
+        "initializing session": {
+          entry: [
+            assign(({ context }) => ({
+              sessionLogs: [
+                { id: context.sessionId, endTime: Date.now(), events: [], startTime: Date.now() },
+                ...context.sessionLogs,
+              ],
+            })),
+          ],
+          always: [
+            {
+              target: "idle",
+            },
+          ],
+        },
+        idle: {
+          after: {
+            2000: {
+              target: "updating session end time",
+            },
+          },
+        },
+        "updating session end time": {
+          entry: [
+            assign(({ context }) => ({
+              sessionLogs: context.sessionLogs.map((log) =>
+                log.id !== context.sessionId
+                  ? log
+                  : {
+                      ...log,
+                      endTime: Date.now(),
+                    },
+              ),
+            })),
+          ],
+          always: [
+            {
+              target: "idle",
+            },
+          ],
+        },
+      },
+    },
   },
   on: {
+    LOG_EVENT: {
+      actions: [
+        assign(({ context, event }) => ({
+          sessionLogs: context.sessionLogs.map((log) =>
+            log.id !== context.sessionId
+              ? log
+              : {
+                  ...log,
+                  events: [
+                    ...log.events.sort((a, b) => a.timestamp - b.timestamp).slice(-MAX_SESSION_LOG_EVENTS),
+                    {
+                      timestamp: Date.now(),
+                      type: event.event.type,
+                      ...(event.event.view ? { view: event.event.view } : {}),
+                    },
+                  ],
+                },
+          ),
+        })),
+      ],
+    },
     REPORT_BLUR: {
       actions: [assign({ isAppFocused: false }), "reportBlurToChildMachines"],
     },

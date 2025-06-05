@@ -5,6 +5,7 @@
   "scripts": {
     "astro": "astro",
     "build": "astro build",
+    "check": "astro check",
     "dev": "PUBLIC_USE_INSPECTOR=true bun astro dev",
     "dev:no-inspector": "astro dev",
     "prettier": "prettier --write \"src/**/*.{astro,json,md,css,html,svelte}\"",

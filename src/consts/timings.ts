@@ -1,4 +1,2 @@
-export const TIMINGS = {
-  weatherFetchInterval: 30 * 1000,
-  weatherFetchRetryDelay: 2 * 1000,
-};
+export const WEATHER_FETCH_INTERVAL = 60 * 1000;
+export const WEATHER_FETCH_RETRY_DELAY = 2 * 1000;
