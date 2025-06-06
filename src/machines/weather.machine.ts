@@ -47,10 +47,10 @@ export const weatherMachine = setup({
       weatherForStockholm?: string;
     },
     events: {} as
-      | { type: "REPORT_BLUR" }
-      | { type: "REPORT_FOCUS" }
-      | { type: "REPORT_OFFLINE" }
-      | { type: "REPORT_ONLINE" }
+      | { type: "REPORT_APP_BLUR" }
+      | { type: "REPORT_APP_FOCUS" }
+      | { type: "REPORT_APP_OFFLINE" }
+      | { type: "REPORT_APP_ONLINE" }
       | { type: "REPORT_USER_ACTIVITY" },
   },
 }).createMachine({
@@ -81,7 +81,7 @@ export const weatherMachine = setup({
             },
             "waiting for online connection": {
               on: {
-                REPORT_ONLINE: {
+                REPORT_APP_ONLINE: {
                   target: "checking connectivity before fetching",
                 },
               },
@@ -89,6 +89,7 @@ export const weatherMachine = setup({
             "fetching weather": {
               invoke: {
                 src: "fetchWeatherForStockholm",
+                id: "fetchWeatherForStockholm",
                 onDone: {
                   target: "idle",
                   actions: [assign(({ event }) => ({ weatherForStockholm: event.output }))],
@@ -129,7 +130,7 @@ export const weatherMachine = setup({
             },
           },
           on: {
-            REPORT_BLUR: {
+            REPORT_APP_BLUR: {
               target: "#weather.paused",
             },
           },
@@ -141,7 +142,7 @@ export const weatherMachine = setup({
             },
           },
           on: {
-            REPORT_FOCUS: {
+            REPORT_APP_FOCUS: {
               target: "watching user activity",
               reenter: true,
             },
@@ -158,17 +159,17 @@ export const weatherMachine = setup({
         REPORT_USER_ACTIVITY: {
           target: "active",
         },
-        REPORT_FOCUS: {
+        REPORT_APP_FOCUS: {
           target: "active",
         },
       },
     },
   },
   on: {
-    REPORT_OFFLINE: {
+    REPORT_APP_OFFLINE: {
       actions: [assign({ isAppOnline: false })],
     },
-    REPORT_ONLINE: {
+    REPORT_APP_ONLINE: {
       actions: [assign({ isAppOnline: true })],
     },
   },

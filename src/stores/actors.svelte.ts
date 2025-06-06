@@ -1,7 +1,8 @@
-import { Actor, createActor, type EventFrom } from "xstate";
+import { type Actor, createActor } from "xstate";
 import { sessionMachine } from "../machines/session.machine.ts";
 import { runifyActor } from "../utils/runify-actor.svelte.ts";
 import { weatherMachine } from "../machines/weather.machine.ts";
+import type { telemetryMachine } from "../machines/telemetry.machine.ts";
 
 // If running in development mode, dynamically import @statelyai/inspect
 
@@ -24,6 +25,10 @@ const sessionActor = createActor(sessionMachine, {
 });
 export const session = runifyActor(sessionActor);
 
+export const telemetry = runifyActor(
+  session.state.context.childMachineRefs.telemetryMachine as Actor<typeof telemetryMachine>,
+);
+
 export const weather = runifyActor(
   session.state.context.childMachineRefs.weatherMachine as Actor<typeof weatherMachine>,
 );
@@ -38,5 +43,5 @@ sessionActor.system.inspect((inspectEvent) => {
   const ignoredEvents: string[] = ["LOG_EVENT", "REPORT_USER_ACTIVITY"];
   if (ignoredEvents.includes(inspectEvent.event.type)) return;
   // Log the event
-  session.send({ type: "LOG_EVENT", event: inspectEvent.event });
+  telemetry.send({ type: "LOG_EVENT", event: inspectEvent.event });
 });

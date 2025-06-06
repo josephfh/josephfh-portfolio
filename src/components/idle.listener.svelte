@@ -1,4 +1,4 @@
 <script>
-  import { session } from "../stores/actors.svelte";
-  session.send({ type: "REPORT_CLIENT_IDLE" });
+  import { telemetry } from "../stores/actors.svelte";
+  telemetry.send({ type: "REPORT_CLIENT_IDLE" });
 </script>

@@ -1,10 +1,10 @@
 <script>
-  import { session } from "../stores/actors.svelte.ts";
+  import { telemetry } from "../stores/actors.svelte.ts";
   import { msToHhmmss } from "../utils/ms-to-hhmmss.ts";
   import { msToReadableDuration } from "../utils/ms-to-readable-duration.ts";
   import { timestampToDate } from "../utils/timestamp-to-date.ts";
   const currentSession = $derived(
-    session.state.context.sessions.find(({ id }) => id === session.state.context.sessionId),
+    telemetry.state.context.sessions.find(({ id }) => id === telemetry.state.context.sessionId),
   );
   const sessionDuration = $derived(currentSession.endTime - currentSession.startTime);
 </script>

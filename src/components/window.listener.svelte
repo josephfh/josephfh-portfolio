@@ -3,7 +3,7 @@
 </script>
 
 <svelte:window
-  onblur={() => session.send({ type: "REPORT_BLUR" })}
+  onblur={() => session.send({ type: "REPORT_APP_BLUR" })}
   onclick={(event) => {
     const target = event.target as HTMLElement | undefined;
     session.send({
@@ -14,9 +14,9 @@
     });
     session.send({ type: "REPORT_USER_ACTIVITY" });
   }}
-  onfocus={() => session.send({ type: "REPORT_FOCUS" })}
+  onfocus={() => session.send({ type: "REPORT_APP_FOCUS" })}
   onkeydown={() => session.send({ type: "REPORT_USER_ACTIVITY" })}
-  onoffline={() => session.send({ type: "REPORT_OFFLINE" })}
-  ononline={() => session.send({ type: "REPORT_ONLINE" })}
+  onoffline={() => session.send({ type: "REPORT_APP_ONLINE" })}
+  ononline={() => session.send({ type: "REPORT_APP_ONLINE" })}
   onscroll={() => session.send({ type: "REPORT_USER_ACTIVITY" })}
 />

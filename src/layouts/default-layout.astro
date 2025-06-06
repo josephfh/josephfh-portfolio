@@ -24,6 +24,13 @@ import WindowListener from "../components/window.listener.svelte";
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      document.documentElement.classList.toggle(
+        "dark",
+        localStorage.theme === "dark" ||
+          (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches),
+      );
+    </script>
     <title>Joseph Hughes - Frontend developer</title>
     <Font cssVariable="--font-monomakh" preload />
   </head>
