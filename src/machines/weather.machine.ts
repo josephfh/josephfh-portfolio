@@ -3,6 +3,7 @@ import { GEO_LOCATIONS } from "../consts/geo-locations";
 import { WEATHER_WORDS_FROM_CODE_4677 } from "../consts/weather-words";
 import { MAX_WEATHER_FETCH_RETRIES } from "../consts/limits";
 import {
+  USER_CONSIDERED_INACTIVE_TIMEOUT,
   WEATHER_FETCH_DELAY_AFTER_FAILURE,
   WEATHER_FETCH_INTERVAL,
   WEATHER_FETCH_RETRY_DELAY,
@@ -36,10 +37,12 @@ export const weatherMachine = setup({
     }),
   },
   guards: {
+    isAppOnline: ({ context }) => context.isAppOnline,
     weatherFetchRetriesExceeded: ({ context }) => context.weatherFetchRetries >= MAX_WEATHER_FETCH_RETRIES,
   },
   types: {
     context: {} as {
+      isAppOnline: boolean;
       weatherFetchRetries: number;
       weatherForStockholm?: string;
     },
@@ -47,99 +50,126 @@ export const weatherMachine = setup({
       | { type: "REPORT_BLUR" }
       | { type: "REPORT_FOCUS" }
       | { type: "REPORT_OFFLINE" }
-      | { type: "REPORT_ONLINE" },
+      | { type: "REPORT_ONLINE" }
+      | { type: "REPORT_USER_ACTIVITY" },
   },
 }).createMachine({
   id: "weather",
   context: {
+    isAppOnline: true,
     weatherFetchRetries: 0,
     weatherForStockholm: undefined,
   },
   initial: "active",
   states: {
     active: {
-      initial: "fetching weather",
+      type: "parallel",
       states: {
-        "fetching weather": {
-          invoke: {
-            src: "fetchWeatherForStockholm",
-            onDone: {
-              target: "idle",
-              actions: [assign(({ event }) => ({ weatherForStockholm: event.output }))],
+        "fetching weather every so often": {
+          initial: "checking connectivity before fetching",
+          states: {
+            "checking connectivity before fetching": {
+              always: [
+                {
+                  guard: "isAppOnline",
+                  target: "fetching weather",
+                },
+                {
+                  target: "waiting for online connection",
+                },
+              ],
             },
-            onError: {
-              target: "waiting before retry",
-              actions: ["incrementWeatherFetchRetries"],
+            "waiting for online connection": {
+              on: {
+                REPORT_ONLINE: {
+                  target: "checking connectivity before fetching",
+                },
+              },
+            },
+            "fetching weather": {
+              invoke: {
+                src: "fetchWeatherForStockholm",
+                onDone: {
+                  target: "idle",
+                  actions: [assign(({ event }) => ({ weatherForStockholm: event.output }))],
+                },
+                onError: {
+                  target: "waiting before retry",
+                  actions: ["incrementWeatherFetchRetries"],
+                },
+              },
+            },
+            "waiting before retry": {
+              always: [
+                {
+                  guard: "weatherFetchRetriesExceeded",
+                  actions: ["resetWeatherFetchRetries"],
+                  target: "unknown",
+                },
+              ],
+              after: {
+                [WEATHER_FETCH_RETRY_DELAY]: {
+                  target: "checking connectivity before fetching",
+                },
+              },
+            },
+            idle: {
+              after: {
+                [WEATHER_FETCH_INTERVAL]: {
+                  target: "checking connectivity before fetching",
+                },
+              },
+            },
+            unknown: {
+              after: {
+                [WEATHER_FETCH_DELAY_AFTER_FAILURE]: {
+                  target: "checking connectivity before fetching",
+                },
+              },
+            },
+          },
+          on: {
+            REPORT_BLUR: {
+              target: "#weather.paused",
             },
           },
         },
-        "waiting before retry": {
-          always: [
-            {
-              guard: "weatherFetchRetriesExceeded",
-              actions: ["resetWeatherFetchRetries"],
-              target: "unknown",
-            },
-          ],
+        "watching user activity": {
           after: {
-            [WEATHER_FETCH_RETRY_DELAY]: {
-              target: "fetching weather",
+            [USER_CONSIDERED_INACTIVE_TIMEOUT]: {
+              target: "#weather.paused",
             },
           },
-        },
-        idle: {
-          after: {
-            [WEATHER_FETCH_INTERVAL]: {
-              target: "fetching weather",
+          on: {
+            REPORT_FOCUS: {
+              target: "watching user activity",
+              reenter: true,
+            },
+            REPORT_USER_ACTIVITY: {
+              target: "watching user activity",
+              reenter: true,
             },
           },
-        },
-        unknown: {
-          after: {
-            [WEATHER_FETCH_DELAY_AFTER_FAILURE]: {
-              target: "fetching weather",
-            },
-          },
-        },
-      },
-      on: {
-        REPORT_BLUR: {
-          target: "unfocused",
-        },
-        REPORT_OFFLINE: {
-          target: "offline and focused",
         },
       },
     },
-    unfocused: {
+    paused: {
       on: {
+        REPORT_USER_ACTIVITY: {
+          target: "active",
+        },
         REPORT_FOCUS: {
           target: "active",
         },
-        REPORT_OFFLINE: {
-          target: "offline and unfocused",
-        },
       },
     },
-    "offline and focused": {
-      on: {
-        REPORT_BLUR: {
-          target: "offline and unfocused",
-        },
-        REPORT_ONLINE: {
-          target: "active",
-        },
-      },
+  },
+  on: {
+    REPORT_OFFLINE: {
+      actions: [assign({ isAppOnline: false })],
     },
-    "offline and unfocused": {
-      on: {
-        REPORT_FOCUS: {
-          target: "offline and focused",
-        },
-        REPORT_ONLINE: {
-          target: "unfocused",
-        },
-      },
+    REPORT_ONLINE: {
+      actions: [assign({ isAppOnline: true })],
     },
   },
 });

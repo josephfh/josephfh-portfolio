@@ -5,22 +5,45 @@ import { MAX_SESSION_LOG_AGE, MAX_SESSION_LOG_COUNT, MAX_SESSION_LOG_EVENTS } fr
 import { assign, setup, stateIn, type ActorRefFrom } from "xstate";
 import { uuid } from "../utils/uuid";
 import { weatherMachine } from "./weather.machine";
+import { USER_CONSIDERED_INACTIVE_TIMEOUT } from "../consts/timings";
 
 interface SessionEvent {
   timestamp: number;
-  type: string;
-  view?: View;
+  loggedEvent: any; // TODO type events
 }
 
-interface SessionLog {
+interface Session {
   id: string;
   endTime: number;
   events: SessionEvent[];
+  metrics: {
+    machineLoadTime?: number;
+    timeToIdle?: number;
+    timeToFirstClientIdle?: number;
+  };
   startTime: number;
 }
 
 export const sessionMachine = setup({
   actions: {
+    logTimeToClientIdle: ({ context }) => ({
+      sessions: context.sessions.map((session) => ({
+        ...session,
+        metrics: {
+          ...session.metrics,
+          timeToFirstClientIdle: Date.now() - context.actorStartTime,
+        },
+      })),
+    }),
+    logTimeToIdle: ({ context }) => ({
+      sessions: context.sessions.map((session) => ({
+        ...session,
+        metrics: {
+          ...session.metrics,
+          timeToIdle: Date.now() - context.actorStartTime,
+        },
+      })),
+    }),
     logWelcomeMessageToConsole: () => {
       if (!import.meta.env.SSR) {
         import.meta.env.MODE === "development" &&
@@ -41,6 +64,9 @@ export const sessionMachine = setup({
     reportOnlineToChildMachines: ({ context }) => {
       context.childMachineRefs.weatherMachine?.send({ type: "REPORT_ONLINE" });
     },
+    reportUserActivityToChildMachines: ({ context }) => {
+      context.childMachineRefs.weatherMachine?.send({ type: "REPORT_USER_ACTIVITY" });
+    },
     spawnChildMachines: assign({
       childMachineRefs: ({ context, spawn }) => ({
         ...context.childMachineRefs,
@@ -54,31 +80,39 @@ export const sessionMachine = setup({
   },
   types: {
     context: {} as {
+      actorStartTime: number;
       childMachineRefs: {
         weatherMachine?: ActorRefFrom<typeof weatherMachine>;
       };
       isAppFocused: boolean;
       isAppOnline: boolean;
       sessionId: string;
-      sessionLogs: SessionLog[];
+      sessions: Session[];
     },
     events: {} as
-      | { type: "LOG_EVENT"; event: any }
+      | { type: "LOG_EVENT"; event: any } //TODO: type logged events
+      | { type: "REPORT_CLIENT_IDLE" }
       | { type: "NAVIGATE"; view: View }
       | { type: "REPORT_BLUR" }
+      | { type: "REPORT_CLICK"; href?: string; tagName?: string; targetId?: string }
       | { type: "REPORT_FOCUS" }
       | { type: "REPORT_OFFLINE" }
-      | { type: "REPORT_ONLINE" },
+      | { type: "REPORT_ONLINE" }
+      | { type: "REPORT_USER_ACTIVITY" },
+    input: {} as {
+      actorStartTime: number;
+    },
   },
 }).createMachine({
   id: "session",
-  context: {
+  context: ({ input }) => ({
+    actorStartTime: input.actorStartTime,
     childMachineRefs: {},
     isAppFocused: true,
     isAppOnline: true,
     sessionId: uuid(),
-    sessionLogs: [],
-  },
+    sessions: [],
+  }),
   entry: ["logWelcomeMessageToConsole", "spawnChildMachines"],
   type: "parallel",
   states: {
@@ -118,7 +152,7 @@ export const sessionMachine = setup({
         "prune old session logs": {
           entry: [
             assign(({ context }) => ({
-              sessionLogs: context.sessionLogs.filter((log) => log.startTime > Date.now() - MAX_SESSION_LOG_AGE),
+              sessions: context.sessions.filter((log) => log.startTime > Date.now() - MAX_SESSION_LOG_AGE),
             })),
           ],
           always: [
@@ -130,7 +164,7 @@ export const sessionMachine = setup({
         "prune excessive session logs": {
           entry: [
             assign(({ context }) => ({
-              sessionLogs: context.sessionLogs.sort((a, b) => b.startTime - a.startTime).slice(-MAX_SESSION_LOG_COUNT),
+              sessions: context.sessions.sort((a, b) => b.startTime - a.startTime).slice(-MAX_SESSION_LOG_COUNT),
             })),
           ],
           always: [
@@ -142,12 +176,19 @@ export const sessionMachine = setup({
         "initializing session": {
           entry: [
             assign(({ context }) => ({
-              sessionLogs: [
-                { id: context.sessionId, endTime: Date.now(), events: [], startTime: Date.now() },
-                ...context.sessionLogs,
+              sessions: [
+                {
+                  id: context.sessionId,
+                  endTime: Date.now(),
+                  events: [],
+                  metrics: {},
+                  startTime: context.actorStartTime,
+                },
+                ...context.sessions,
               ],
             })),
           ],
+          exit: ["logTimeToIdle"],
           always: [
             {
               target: "idle",
@@ -164,7 +205,7 @@ export const sessionMachine = setup({
         "updating session end time": {
           entry: [
             assign(({ context }) => ({
-              sessionLogs: context.sessionLogs.map((log) =>
+              sessions: context.sessions.map((log) =>
                 log.id !== context.sessionId
                   ? log
                   : {
@@ -182,12 +223,43 @@ export const sessionMachine = setup({
         },
       },
     },
+    user: {
+      initial: "engaged",
+      states: {
+        engaged: {
+          after: {
+            [USER_CONSIDERED_INACTIVE_TIMEOUT]: {
+              target: "disengaged",
+            },
+          },
+          on: {
+            REPORT_BLUR: {
+              target: "disengaged",
+            },
+            REPORT_USER_ACTIVITY: {
+              target: "engaged",
+              reenter: true,
+            },
+          },
+        },
+        disengaged: {
+          on: {
+            REPORT_FOCUS: {
+              target: "engaged",
+            },
+            REPORT_USER_ACTIVITY: {
+              target: "engaged",
+            },
+          },
+        },
+      },
+    },
   },
   on: {
     LOG_EVENT: {
       actions: [
         assign(({ context, event }) => ({
-          sessionLogs: context.sessionLogs.map((log) =>
+          sessions: context.sessions.map((log) =>
             log.id !== context.sessionId
               ? log
               : {
@@ -196,10 +268,26 @@ export const sessionMachine = setup({
                     ...log.events.sort((a, b) => a.timestamp - b.timestamp).slice(-MAX_SESSION_LOG_EVENTS),
                     {
                       timestamp: Date.now(),
-                      type: event.event.type,
-                      ...(event.event.view ? { view: event.event.view } : {}),
+                      loggedEvent: event.event,
                     },
                   ],
+                },
+          ),
+        })),
+      ],
+    },
+    REPORT_CLIENT_IDLE: {
+      actions: [
+        assign(({ context }) => ({
+          sessions: context.sessions.map((log) =>
+            log.id !== context.sessionId
+              ? log
+              : {
+                  ...log,
+                  metrics: {
+                    ...log.metrics,
+                    timeToFirstClientIdle: Date.now() - context.actorStartTime,
+                  },
                 },
           ),
         })),
@@ -216,6 +304,9 @@ export const sessionMachine = setup({
     },
     REPORT_ONLINE: {
       actions: [assign({ isAppOnline: true }), "reportOnlineToChildMachines"],
+    },
+    REPORT_USER_ACTIVITY: {
+      actions: ["reportUserActivityToChildMachines"],
     },
   },
 });

@@ -4,6 +4,7 @@ import { Font } from "astro:assets";
 import Header from "../components/header.svelte";
 import Stats from "../components/stats.svelte";
 import Nav from "../components/nav.svelte";
+import IdleListener from "../components/idle.listener.svelte";
 import RoutesListener from "../components/routes.listener.svelte";
 import WindowListener from "../components/window.listener.svelte";
 ---
@@ -29,19 +30,15 @@ import WindowListener from "../components/window.listener.svelte";
   <body>
     <div class="mx-20 mt-16 mb-10">
       <Header client:idle />
-      <Stats client:only />
       <div class="mt-16 mb-8">
         <Nav client:idle />
       </div>
-
       <slot />
-
-      <!-- <div class="bg-linear-to-b/increasing from-indigo-500 to-teal-400 flex w-2 top-0 absolute left-0 h-screen"></div>
-
-      <div class="bg-teal-600 flex w-2 top-0 absolute left-0 h-screen opacity-60 hover:opacity-0 duration-200 transition-all"></div> -->
+      <Stats client:only />
 
       <WindowListener client:only />
       <RoutesListener client:only />
+      <IdleListener client:idle />
     </div>
   </body>
 </html>
