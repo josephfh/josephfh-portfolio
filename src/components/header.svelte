@@ -16,3 +16,16 @@
     </span>
   </span>
 </h1>
+
+<div class="bg-primary">dffdfd</div>
+<div class="bg-secondary">dffdfd</div>
+v
+<div class="bg-primary text-primary-foreground">dffdfd</div>
+<div class="bg-secondary text-secondary-foreground">dffdfd</div>
+<div class="bg-muted text-muted-foreground">dffdfd</div>
+<div class="bg-accent text-accent-foreground">dffdfd</div>
+
+<div class="text-primary">text-primary</div>
+<div class="text-secondary">text-secondary</div>
+<div class="text-muted">text-muted</div>
+<div class="text-accent">text-accent</div>
